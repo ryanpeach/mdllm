@@ -15,6 +15,9 @@ jobs:
       with:
         enable-cache: true
         cache-suffix: "optional-suffix"
+    - uses: actions/setup-node@v4
+    - name: markdown link checking
+      run: npm install -g markdown-link-check
     - name: Install Dependencies
       run: uv pip install -r pyproject.toml --extra dev
     - uses: pre-commit/action@v3.0.1
