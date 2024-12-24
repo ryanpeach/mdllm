@@ -7,16 +7,19 @@ requires-python = ">=3.11"
 dependencies = [
     "graphrag>=1.0.1",
     "langchain>=0.3.13",
-    "markdown>=3.7",
     "networkx>=3.4.2",
     "rich>=13.9.4",
     "typer-config>=1.4.2",
     "typer>=0.15.1",
+    "pyyaml>=6.0.2",
+    "marko>=2.1.2",
 ]
 
 [dependency-groups]
 dev = [
+    "ipython>=8.31.0",
     "pyright>=1.1.391",
+    "pytest>=8.3.4",
     "ruff>=0.8.4",
 ]
 

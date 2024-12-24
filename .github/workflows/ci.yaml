@@ -21,3 +21,5 @@ jobs:
     - name: Install Dependencies
       run: uv pip install -r pyproject.toml --extra dev
     - uses: pre-commit/action@v3.0.1
+    - name: pytest
+      run: uv run pytest tests
