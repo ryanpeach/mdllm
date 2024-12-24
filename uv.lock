@@ -1306,6 +1306,7 @@ dependencies = [
     { name = "networkx" },
     { name = "pyyaml" },
     { name = "rich" },
+    { name = "tqdm" },
     { name = "typer" },
     { name = "typer-config" },
 ]
@@ -1326,6 +1327,7 @@ requires-dist = [
     { name = "networkx", specifier = ">=3.4.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "rich", specifier = ">=13.9.4" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "typer", specifier = ">=0.15.1" },
     { name = "typer-config", specifier = ">=1.4.2" },
 ]

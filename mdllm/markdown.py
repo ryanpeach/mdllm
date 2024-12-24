@@ -23,24 +23,24 @@ class Tag(inline.InlineElement):
     parse_children = True
 
 
-class WikiRendererMixin(object):
+class _WikiRendererMixin(object):
     def render_wiki_link(self, element):
         return "[[{}]]".format(element.children[0].children[0])
 
 
-class TagMixin(object):
+class _TagMixin(object):
     def render_tag(self, element):
         return "#{}".format(element.children[0].children[0])
 
 
-TagExt = MarkoExtension(elements=[Tag], renderer_mixins=[TagMixin])
+_WIKILINK_EXT = MarkoExtension(elements=[Tag], renderer_mixins=[_TagMixin])
 
-WikiLinkExt = MarkoExtension(elements=[WikiLink], renderer_mixins=[WikiRendererMixin])
+_WIKILINKEXT = MarkoExtension(elements=[WikiLink], renderer_mixins=[_WikiRendererMixin])
 
-PARSER = Markdown(extensions=[WikiLinkExt, TagExt], renderer=MarkdownRenderer)
+_PARSER = Markdown(extensions=[_WIKILINKEXT, _WIKILINK_EXT], renderer=MarkdownRenderer)
 
 
-def parse_front_matter(file_content: str) -> Tuple[Dict[str, List[str]], str]:
+def _parse_front_matter(file_content: str) -> Tuple[Dict[str, List[str]], str]:
     front_matter, content = file_content.split("---\n", 2)[1:]
     metadata = yaml.safe_load(front_matter)
     aliases = []
@@ -51,7 +51,7 @@ def parse_front_matter(file_content: str) -> Tuple[Dict[str, List[str]], str]:
     return metadata, content.strip()
 
 
-def render_element(element: inline.InlineElement | block.BlockElement) -> str:
+def _render_element(element: inline.InlineElement | block.BlockElement) -> str:
     # No not render sublists
     element = deepcopy(element)
     new_children = []
@@ -63,10 +63,10 @@ def render_element(element: inline.InlineElement | block.BlockElement) -> str:
     # Actual rendering
     doc = block.Document()
     doc.children = [element]
-    return PARSER.render(doc).strip()
+    return _PARSER.render(doc).strip()
 
 
-def traverse_list_items(
+def _traverse_list_items(
     items: Sequence[element.Element], graph: nx.DiGraph, parent_node: str
 ) -> None:
     for item in items:
@@ -101,10 +101,10 @@ def traverse_list_items(
         # These call traverse_list_items recursively or render the child node
         if isinstance(item, block.List):
             # Recursively process nested lists, keeping the same parent
-            traverse_list_items(item.children, graph, parent_node)
+            _traverse_list_items(item.children, graph, parent_node)
         elif isinstance(item, block.ListItem):
             # Render the current item as a new node
-            child_node = render_element(item)
+            child_node = _render_element(item)
 
             # Avoid self-loops by checking that the child and parent are different
             if child_node != parent_node:
@@ -113,10 +113,10 @@ def traverse_list_items(
                 )
 
             # Recursively process child elements of this list item
-            traverse_list_items(item.children, graph, child_node)
+            _traverse_list_items(item.children, graph, child_node)
         elif isinstance(item, block.Paragraph):
             # For non-list children, render and connect to the parent
-            child_node = render_element(item)
+            child_node = _render_element(item)
 
             # Avoid self-loops here as well
             if child_node != parent_node:
@@ -125,27 +125,26 @@ def traverse_list_items(
                 )
 
             # Recursively process child elements of this list item
-            traverse_list_items(item.children, graph, child_node)
+            _traverse_list_items(item.children, graph, child_node)
 
 
-def parse_markdown_to_graph(filename: str, file_content: str) -> nx.DiGraph:
+def parse_markdown_to_graph(
+    graph: nx.DiGraph, alias: str, file_content: str
+) -> nx.DiGraph:
     # Parse YAML front matter
-    metadata, content = parse_front_matter(file_content)
-
-    # Initialize graph
-    graph = nx.DiGraph()
+    metadata, content = _parse_front_matter(file_content)
 
     # Add alias relationships
     for alias in metadata.get("alias", []):
-        graph.add_edge(alias, filename, relationship=Relationship.ALIAS.value)
+        graph.add_edge(alias, alias, relationship=Relationship.ALIAS.value)
 
     # Configure Markdown parser with custom extensions
-    parsed = PARSER.parse(content)
+    parsed = _PARSER.parse(content)
 
     # Traverse the parsed AST to process list items
     for elem in parsed.children:
         if isinstance(elem, block.List):
-            traverse_list_items(elem.children, graph, filename)
+            _traverse_list_items(elem.children, graph, alias)
         else:
             raise ValueError("Only list items are supported in body after frontmatter")
 
